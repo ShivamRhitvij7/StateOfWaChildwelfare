@@ -1,0 +1,24 @@
+{
+    "name": "LS_AzureSQLDB",
+    "type": "Microsoft.DataFactory/factories/linkedservices",
+    "properties": {
+        "type": "AzureSqlDatabase",
+        "typeProperties": {
+            "connectionString": {
+                "type": "AzureKeyVaultSecret",
+                "store": {
+                    "referenceName": "LS_KeyVault",
+                    "type": "LinkedServiceReference",
+                    "parameters": {
+                        "keyVaultBaseUrl": {
+                            "value": "@pipeline().globalParameters.keyVaultBaseUrl",
+                            "type": "Expression"
+                        }
+                    }
+                },
+                "secretName": "sql-connection-string"
+            }
+        },
+        "annotations": ["parameterized", "keyvault-backed"]
+    }
+}

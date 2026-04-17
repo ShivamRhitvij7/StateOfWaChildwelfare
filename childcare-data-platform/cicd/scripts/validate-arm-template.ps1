@@ -1,0 +1,1 @@
+# Placeholder for ARM template validation script

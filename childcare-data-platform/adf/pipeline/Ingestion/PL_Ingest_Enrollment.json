@@ -1,0 +1,126 @@
+{
+    "name": "PL_Ingest_Enrollment",
+    "properties": {
+        "description": "Ingests enrollment CSV files from blob storage into SQL staging",
+        "activities": [
+            {
+                "name": "Copy_Enrollment_To_Staging",
+                "type": "Copy",
+                "dependsOn": [],
+                "policy": {
+                    "timeout": "0.01:00:00",
+                    "retry": 2,
+                    "retryIntervalInSeconds": 60
+                },
+                "typeProperties": {
+                    "source": {
+                        "type": "DelimitedTextSource",
+                        "storeSettings": {
+                            "type": "AzureBlobStorageReadSettings",
+                            "recursive": false,
+                            "wildcardFolderPath": {
+                                "value": "@concat(pipeline().parameters.sourceContainer, '/', formatDateTime(utcnow(), 'yyyy/MM/dd'))",
+                                "type": "Expression"
+                            },
+                            "wildcardFileName": "enrollment_*.csv"
+                        }
+                    },
+                    "sink": {
+                        "type": "AzureSqlSink",
+                        "preCopyScript": "TRUNCATE TABLE staging.Enrollment",
+                        "writeBehavior": "insert",
+                        "disableMetricsCollection": false
+                    },
+                    "enableStaging": false
+                },
+                "inputs": [
+                    {
+                        "referenceName": "DS_Raw_Enrollment_CSV",
+                        "type": "DatasetReference",
+                        "parameters": {
+                            "containerName": {
+                                "value": "@pipeline().parameters.sourceContainer",
+                                "type": "Expression"
+                            }
+                        }
+                    }
+                ],
+                "outputs": [
+                    {
+                        "referenceName": "DS_Staging_Enrollment_SQL",
+                        "type": "DatasetReference"
+                    }
+                ]
+            },
+            {
+                "name": "Log_Success",
+                "type": "ExecutePipeline",
+                "dependsOn": [
+                    {
+                        "activity": "Copy_Enrollment_To_Staging",
+                        "dependencyConditions": ["Succeeded"]
+                    }
+                ],
+                "typeProperties": {
+                    "pipeline": {
+                        "referenceName": "PL_Util_LogExecution",
+                        "type": "PipelineReference"
+                    },
+                    "parameters": {
+                        "pipelineName": {
+                            "value": "@pipeline().Pipeline",
+                            "type": "Expression"
+                        },
+                        "status": "Success",
+                        "rowsCopied": {
+                            "value": "@activity('Copy_Enrollment_To_Staging').output.rowsCopied",
+                            "type": "Expression"
+                        },
+                        "environment": {
+                            "value": "@pipeline().globalParameters.environment",
+                            "type": "Expression"
+                        }
+                    }
+                }
+            },
+            {
+                "name": "Log_Failure",
+                "type": "ExecutePipeline",
+                "dependsOn": [
+                    {
+                        "activity": "Copy_Enrollment_To_Staging",
+                        "dependencyConditions": ["Failed"]
+                    }
+                ],
+                "typeProperties": {
+                    "pipeline": {
+                        "referenceName": "PL_Util_LogExecution",
+                        "type": "PipelineReference"
+                    },
+                    "parameters": {
+                        "pipelineName": {
+                            "value": "@pipeline().Pipeline",
+                            "type": "Expression"
+                        },
+                        "status": "Failed",
+                        "rowsCopied": "0",
+                        "environment": {
+                            "value": "@pipeline().globalParameters.environment",
+                            "type": "Expression"
+                        }
+                    }
+                }
+            }
+        ],
+        "parameters": {
+            "sourceContainer": {
+                "type": "string",
+                "defaultValue": "raw-enrollment"
+            }
+        },
+        "folder": {
+            "name": "Ingestion"
+        },
+        "annotations": ["enrollment", "daily"]
+    }
+}

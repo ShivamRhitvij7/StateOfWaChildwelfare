@@ -1,0 +1,32 @@
+{
+    "name": "adf-childcare-dev",
+    "type": "Microsoft.DataFactory/factories",
+    "properties": {
+        "globalParameters": {
+            "environment": {
+                "type": "string",
+                "value": "dev"
+            },
+            "keyVaultBaseUrl": {
+                "type": "string",
+                "value": "https://kv-childcare-dev.vault.azure.net/"
+            },
+            "storageAccountName": {
+                "type": "string",
+                "value": "stchildcaredev"
+            },
+            "sqlServerName": {
+                "type": "string",
+                "value": "sql-childcare-dev.database.windows.net"
+            },
+            "sqlDatabaseName": {
+                "type": "string",
+                "value": "db-childcare-dev"
+            },
+            "alertEmailRecipients": {
+                "type": "string",
+                "value": "childcare-data-team-dev@deloitte.com"
+            }
+        }
+    }
+}

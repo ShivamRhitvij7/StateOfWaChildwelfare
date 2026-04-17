@@ -1,0 +1,100 @@
+# PURPOSE: Validates ADF ARM template on every pull request to main
+
+trigger: none  # CI is triggered by PR policy, not push
+
+pr:
+  branches:
+    include:
+      - main
+  paths:
+    include:
+      - adf/**
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  subscriptionId: '$(AZURE_SUBSCRIPTION_ID)'       # Set in pipeline variables (secret)
+  resourceGroupName: 'rg-childcare-dev'
+  factoryName: 'adf-childcare-dev'
+
+stages:
+  - stage: Validate
+    displayName: '🔍 Validate ADF ARM Template'
+    jobs:
+      - job: ValidateARM
+        displayName: 'Validate ARM Template'
+        steps:
+          # Step 1: Install Node.js (required for ADF utilities)
+          - task: NodeTool@0
+            inputs:
+              versionSpec: '18.x'
+            displayName: 'Install Node.js'
+
+          # Step 2: Install the ADF npm utilities package
+          # This is Microsoft's official tool for validating & exporting ADF ARM templates
+          - task: Npm@1
+            inputs:
+              command: 'custom'
+              customCommand: 'install -g @microsoft/azure-data-factory-utilities'
+            displayName: 'Install ADF Utilities'
+
+          # Step 3: Validate the ADF code
+          # This catches issues like broken references, invalid expressions, etc.
+          - task: CmdLine@2
+            inputs:
+              script: |
+                node -e "
+                const { validateArmTemplate } = require('@microsoft/azure-data-factory-utilities');
+                validateArmTemplate(
+                  '$(Build.Repository.LocalPath)/adf',
+                  '/subscriptions/$(subscriptionId)/resourceGroups/$(resourceGroupName)/providers/Microsoft.DataFactory/factories/$(factoryName)',
+                  'AzureResourceManagerTemplateExport'
+                );
+                "
+            displayName: 'Validate ADF Artifacts'
+
+          # Step 4: Export ARM template (to verify it generates cleanly)
+          - task: CmdLine@2
+            inputs:
+              script: |
+                node -e "
+                const { exportArmTemplate } = require('@microsoft/azure-data-factory-utilities');
+                exportArmTemplate(
+                  '$(Build.Repository.LocalPath)/adf',
+                  '/subscriptions/$(subscriptionId)/resourceGroups/$(resourceGroupName)/providers/Microsoft.DataFactory/factories/$(factoryName)',
+                  'ArmTemplateOutput'
+                );
+                "
+            displayName: 'Export ARM Template'
+
+          # Step 5: Publish the ARM template as a build artifact for the CD pipeline
+          - task: PublishPipelineArtifact@1
+            inputs:
+              targetPath: '$(Build.Repository.LocalPath)/ArmTemplateOutput'
+              artifact: 'adf-arm-template'
+              publishLocation: 'pipeline'
+            displayName: 'Publish ARM Template Artifact'
+
+  - stage: RunTests
+    displayName: '🧪 Run Validation Tests'
+    dependsOn: Validate
+    jobs:
+      - job: PythonTests
+        displayName: 'Run Parameter & Data Quality Tests'
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.11'
+
+          - script: |
+              pip install pytest
+              pytest tests/ -v --junitxml=test-results.xml
+            displayName: 'Run pytest'
+
+          - task: PublishTestResults@2
+            inputs:
+              testResultsFormat: 'JUnit'
+              testResultsFiles: 'test-results.xml'
+            condition: always()
+            displayName: 'Publish Test Results'

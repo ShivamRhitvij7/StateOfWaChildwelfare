@@ -1,0 +1,27 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "factoryName": {
+            "value": "adf-childcare-prod"
+        },
+        "globalParameters_environment_value": {
+            "value": "prod"
+        },
+        "globalParameters_keyVaultBaseUrl_value": {
+            "value": "https://kv-childcare-prod.vault.azure.net/"
+        },
+        "globalParameters_storageAccountName_value": {
+            "value": "stchildcareprod"
+        },
+        "globalParameters_sqlServerName_value": {
+            "value": "sql-childcare-prod.database.windows.net"
+        },
+        "globalParameters_sqlDatabaseName_value": {
+            "value": "db-childcare-prod"
+        },
+        "globalParameters_alertEmailRecipients_value": {
+            "value": "childcare-data-team-prod@deloitte.com"
+        }
+    }
+}

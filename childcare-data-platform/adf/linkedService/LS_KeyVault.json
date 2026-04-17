@@ -1,0 +1,17 @@
+{
+    "name": "LS_KeyVault",
+    "type": "Microsoft.DataFactory/factories/linkedservices",
+    "properties": {
+        "type": "AzureKeyVault",
+        "typeProperties": {
+            "baseUrl": "@{linkedService().keyVaultBaseUrl}"
+        },
+        "parameters": {
+            "keyVaultBaseUrl": {
+                "type": "string",
+                "defaultValue": "@pipeline().globalParameters.keyVaultBaseUrl"
+            }
+        },
+        "annotations": []
+    }
+}
