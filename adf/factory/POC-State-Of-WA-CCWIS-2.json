@@ -1,0 +1,9 @@
+{
+	"name": "POC-State-Of-WA-CCWIS-2",
+	"location": "eastus",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "4e8f4e89-20fe-42c4-8f16-48b7da52f4ee",
+		"tenantId": "2da40318-46be-402c-ba75-cfb1f656567d"
+	}
+}
